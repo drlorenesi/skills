@@ -7,7 +7,7 @@ Personal [Claude Code](https://claude.com/claude-code) skills by Diego Lorenesi,
 In the root of a Claude Code project:
 
 ```bash
-npx skills add <username>/skills
+npx skills add drlorenesi/skills
 ```
 
 When prompted:
@@ -20,15 +20,13 @@ Each skill is symlinked into `.claude/skills/<skill-name>` in your project. Upda
 You can also install a single skill from the repo:
 
 ```bash
-npx skills add <username>/skills/shadcn-forms
+npx skills add drlorenesi/skills/shadcn-forms
 ```
-
-> Replace `<username>` with this repo's GitHub owner.
 
 ## Skills
 
-| Skill | Description |
-|---|---|
+| Skill                            | Description                                                                                                                                                      |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`shadcn-forms`](./shadcn-forms) | Build type-safe forms with shadcn/ui, react-hook-form, and zod. Covers schema definition, form setup, field wiring, validation display, and submission patterns. |
 
 ## Adding a new skill
@@ -53,9 +51,9 @@ Every skill in this repo follows the same shape:
 
 ```yaml
 ---
-name: <kebab-case-name>          # must match the folder name
-description: <one-line summary>  # what the skill does and when to use it
-user-invocable: true             # exposed as a /<name> slash command
+name: <kebab-case-name> # must match the folder name
+description: <one-line summary> # what the skill does and when to use it
+user-invocable: true # exposed as a /<name> slash command
 ---
 ```
 
