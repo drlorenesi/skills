@@ -1,5 +1,7 @@
 # register() vs Controller
 
+> **Client-side mode only.** This applies to forms built with react-hook-form (`useHookFormAction`). Server-side native forms (`useStateAction` + `<form action>`) use neither `register` nor `Controller` — they use uncontrolled shadcn controls with `name` + `defaultValue`.
+
 ## Use `register()` for native inputs
 
 `Input`, `Textarea`, and `NativeSelect` accept a `ref` and forward DOM events — spread `register()` directly:

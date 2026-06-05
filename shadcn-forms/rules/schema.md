@@ -1,24 +1,33 @@
 # Zod Schema Patterns
 
-## Collocate schema with the form file
+## Place the schema in `app/<ruta>/schema.ts`
 
-**Client-only forms:** define the schema in the same file as the form component. Only extract to a shared file when two or more forms share the same shape.
+Every form's schema lives in its own colocated `schema.ts` (no directive), exported, and imported by both the action and the form component:
 
-**Server action forms (next-safe-action):** always define the schema in `schemas/[feature].ts` (never inside `actions/[feature].ts`). Import it into both the action file and the form component. Next.js treats every export from a `"use server"` file as a server proxy — a zod schema exported from an action file will be broken on the client.
+```
+app/<ruta>/
+  schema.ts          export const <feature>Schema = z.object({ … })
+  actions.ts         "use server" — import { <feature>Schema } from "./schema"
+  <nombre>-form.tsx  import { <feature>Schema } from "./schema"  (client mode)
+```
+
+**Never define the schema inside `actions.ts`.** Next.js treats every export of a `"use server"` file as a server-action proxy; a zod schema exported from there is serialized and breaks `zodResolver` on the client with *"Invalid input: not a Zod schema"*. A neutral `schema.ts` (no `"use server"` / `"use client"`) imports safely from both sides.
+
+> Server-only actions that are **not** forms (e.g. the diagnostic tools in `app/bds/*/actions.ts`) may keep their schema as a *local, unexported* `const` inside `actions.ts` — fine, because nothing on the client imports it. Forms are different: the schema is shared, so it must be exported from `schema.ts`.
 
 ---
 
-## Common field schemas
+## Common field schemas (zod v4)
 
 ```ts
 import { z } from "zod"
 
-const schema = z.object({
+export const schema = z.object({
   // Required text
   name: z.string().min(1, "Name is required"),
 
-  // Email
-  email: z.string().email("Invalid email address"),
+  // Email — top-level in zod v4 (not z.string().email())
+  email: z.email("Invalid email address"),
 
   // Optional field
   bio: z.string().optional(),
@@ -29,17 +38,20 @@ const schema = z.object({
   // Boolean (Checkbox / Switch)
   terms: z.boolean().refine((v) => v === true, "You must accept the terms"),
 
-  // Enum (Select / RadioGroup)
-  role: z.enum(["admin", "editor", "viewer"], { message: "Select a role" }),
+  // Enum (Select / RadioGroup) — custom message via { error } in zod v4
+  role: z.enum(["admin", "editor", "viewer"], { error: "Select a role" }),
 
   // Array of strings (multi-select / CheckboxGroup)
   tags: z.array(z.string()).min(1, "Select at least one tag"),
 
-  // URL
-  website: z.string().url("Enter a valid URL").optional().or(z.literal("")),
+  // URL — top-level in zod v4 (not z.string().url())
+  website: z.url("Enter a valid URL").optional().or(z.literal("")),
 
-  // Date from a date input (always a string from the DOM)
-  birthdate: z.string().date("Invalid date"),
+  // Date string from a native <input type="date"> — z.iso.date() in zod v4
+  birthdate: z.iso.date("Invalid date"),
+
+  // Date object from a shadcn DatePicker (Calendar's onSelect returns a Date)
+  availableFrom: z.date(),
 })
 ```
 
@@ -47,7 +59,7 @@ const schema = z.object({
 
 ## Cross-field validation
 
-Use `.superRefine` or `.refine` at the object level:
+Use `.refine` or `.superRefine` at the object level; set `path` to the field that should show the error:
 
 ```ts
 const schema = z
@@ -56,16 +68,16 @@ const schema = z
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
+    error: "Passwords do not match",
     path: ["confirmPassword"],
   })
 ```
 
-Always set `path` to the field that should show the error.
-
 ---
 
 ## Infer the type — never duplicate it
+
+In **client mode**, `useHookFormAction` infers the form type for you — you usually don't need `FormValues` at all. If you do need the type elsewhere, infer it; never hand-write an interface:
 
 ```ts
 // Correct
